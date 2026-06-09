@@ -35,10 +35,15 @@ const OrderSuccess = () => {
                 Yum! Your food will reach you in <span className="text-warmOrange font-bold">35 mins</span>.
             </p>
             
-            <div className="bg-peach-50 p-6 rounded-2xl mb-8 border border-peach-100">
-                <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mb-1">Order ID</p>
-                <p className="text-2xl font-black text-warmOrange">#{orderId}</p>
+            <div className="bg-peach-50 p-6 rounded-2xl mb-4 border border-peach-100">
+                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-1">Order ID</p>
+                <p className="text-2xl font-black text-warmOrange uppercase tracking-tighter">#{orderId.slice(-8)}</p>
             </div>
+            
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-8 flex items-center justify-center gap-2">
+               <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></div>
+               Secure Handover PIN will be available in tracking
+            </p>
 
             <div className="space-y-4 relative z-20">
                 <Link 

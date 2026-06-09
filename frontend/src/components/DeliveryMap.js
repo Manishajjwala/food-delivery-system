@@ -1,17 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // Default Coordinates for Ahmedabad (Restaurant)
-const RESTAURANT_COORDS = [23.0120, 72.5028]; 
-// Fallback User Coordinates (Satellite area)
-const DEFAULT_USER_COORDS = [23.0300, 72.5170];
+const RESTAURANT_COORDS = [23.1256, 72.5401]; 
+const DEFAULT_USER_COORDS = [23.1298, 72.5448];
 
-const DeliveryMap = ({ orderStatus, liveEta }) => {
+const DeliveryMap = ({ orderStatus, liveEta, riderLocation }) => {
   const markerRef = useRef(null);      // Delivery Truck
   const userMarkerRef = useRef(null);  // Blue User Icon
   const mapInstance = useRef(null);
   const routingControlRef = useRef(null);
   const [routePoints, setRoutePoints] = useState([]);
   const [userCoords, setUserCoords] = useState(DEFAULT_USER_COORDS);
+  const [riderCoords, setRiderCoords] = useState(RESTAURANT_COORDS);
+
+  // Sync rider coords from prop
+  useEffect(() => {
+    if (riderLocation) {
+        setRiderCoords([riderLocation.lat, riderLocation.lng]);
+    }
+  }, [riderLocation]);
 
   // Helper to format MM:SS
   const formatTime = (seconds) => {
@@ -146,8 +153,19 @@ const DeliveryMap = ({ orderStatus, liveEta }) => {
 
   // 5. Smooth Tracking Logic (Truck Movement)
   useEffect(() => {
-    if (!markerRef.current || orderStatus !== 'Out for Delivery' || routePoints.length === 0) return;
+    if (!markerRef.current || (orderStatus !== 'Out for Delivery' && orderStatus !== 'out_for_delivery')) return;
 
+    // A. Use Real GPS Telemetry if available
+    if (riderLocation && riderLocation.lat && riderLocation.lng) {
+      markerRef.current.setLatLng([riderLocation.lat, riderLocation.lng]);
+      if (mapInstance.current) {
+        mapInstance.current.panTo([riderLocation.lat, riderLocation.lng], { animate: true });
+      }
+      return;
+    }
+
+    // B. Fallback to Simulated Progression
+    if (routePoints.length === 0) return;
     const progress = Math.min(1, Math.max(0, (1500 - liveEta) / (1500 - 120)));
     const pointIndex = Math.floor(progress * (routePoints.length - 1));
     const targetPoint = routePoints[pointIndex];
@@ -158,7 +176,7 @@ const DeliveryMap = ({ orderStatus, liveEta }) => {
         mapInstance.current.setView([targetPoint.lat, targetPoint.lng], 16, { animate: true });
       }
     }
-  }, [orderStatus, liveEta, routePoints]);
+  }, [orderStatus, liveEta, routePoints, riderLocation]);
 
   return (
     <div className="w-full h-full relative overflow-hidden rounded-3xl shadow-inner select-none pointer-events-none">

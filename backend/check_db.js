@@ -1,19 +1,23 @@
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const FoodItem = require('./models/FoodItem');
+const User = require('./models/User');
+require('dotenv').config();
 
-dotenv.config();
-
-const checkDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGODB_URI);
-    const count = await FoodItem.countDocuments();
-    console.log(`Total FoodItems in DB: ${count}`);
-    process.exit();
-  } catch (err) {
-    console.error('Check Error:', err);
-    process.exit(1);
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/hungry_db').then(async () => {
+  const admin = await User.findOne({ email: 'admin@hungry.com' });
+  console.log('Admin user directly from DB:');
+  console.log(admin);
+  if (admin && admin.role !== 'admin') {
+    admin.role = 'admin';
+    await admin.save();
+    console.log('Fixed admin role');
+  } else if (!admin) {
+    const admin2 = await User.create({
+      name: 'Admin User',
+      email: 'admin@hungry.com',
+      password: 'adminpassword',
+      role: 'admin'
+    });
+    console.log('Created admin:', admin2);
   }
-};
-
-checkDB();
+  process.exit();
+}).catch(console.error);

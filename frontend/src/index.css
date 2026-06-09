@@ -4,9 +4,11 @@
 
 @layer base {
   body {
-    @apply bg-cream text-gray-800 font-sans antialiased;
+    @apply bg-[#fcfcfc] text-gray-900 font-sans antialiased transition-colors duration-300;
   }
 }
+
+
 
 .no-scrollbar::-webkit-scrollbar {
   display: none;
@@ -21,20 +23,76 @@
   to { transform: translateY(0); opacity: 1; }
 }
 
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
+@keyframes pulse-ring {
+  0% { transform: scale(.95); opacity: 1; }
+  100% { transform: scale(1.1); opacity: 0; }
 }
 
 .animate-slide-up {
   animation: slideUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
-.animate-shake {
-  animation: shake 0.5s ease-in-out;
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
-.search-highlight {
-  @apply ring-4 ring-warmOrange/30 border-warmOrange scale-[1.02] -translate-y-2;
+.bg-wavy {
+  background-color: #ff6b35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 800'%3E%3Cpath fill='%23ff8a5c' d='M471,583C303,567,204,482,105,417 2,350,0,230,0,120V0h1600v120c0,110-2,230-105,297-99,65-198,150-366,166-197,19-273,20-429,20s-232-1-429-20Z'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+  background-size: cover;
 }
+
+.bg-wavy-light {
+  background-color: #fffdf9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 800'%3E%3Cpath fill='%23ffe8db' d='M471,583C303,567,204,482,105,417 2,350,0,230,0,120V0h1600v120c0,110-2,230-105,297-99,65-198,150-366,166-197,19-273,20-429,20s-232-1-429-20Z'/%3E%3C/svg%3E");
+  background-attachment: fixed;
+  background-size: cover;
+}
+
+/* Entry Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-in {
+  animation-duration: 0.5s;
+  animation-fill-mode: forwards;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-in {
+  animation-name: fadeIn;
+}
+
+.slide-in-from-bottom {
+  animation-name: slideInUp;
+}
+
+/* Hide browser default password reveal icons */
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 10s linear infinite;
+}
+
+@keyframes bounce-slow {
+  0%, 100% { transform: translateY(-5%); animation-timing-function: cubic-bezier(0.8, 0, 1, 1); }
+  50% { transform: translateY(0); animation-timing-function: cubic-bezier(0, 0, 0.2, 1); }
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 3s infinite;
+}
+
+
+

@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { MapPin, Package, Clock, CheckCircle, ChevronLeft, Truck, Utensils, AlertTriangle } from 'lucide-react';
+import { MapPin, Package, Clock, CheckCircle, ChevronLeft, Truck, Utensils, AlertTriangle, Star, MessageSquare } from 'lucide-react';
 import DeliveryMap from '../components/DeliveryMap';
+import ReviewModal from '../components/ReviewModal';
+import OrderChat from '../components/OrderChat';
+import { io } from 'socket.io-client';
 
 const OrderDetail = () => {
   const { orderId } = useParams();
@@ -9,6 +12,8 @@ const OrderDetail = () => {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('Placed');
   const [liveEta, setLiveEta] = useState(1500); // 25 minutes in seconds
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [riderLocation, setRiderLocation] = useState(null);
   const navigate = useNavigate();
 
   // Helper to format MM:SS
@@ -48,27 +53,75 @@ const OrderDetail = () => {
         const formattedOrder = {
           id: data._id,
           date: new Date(data.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-          items: data.orderItems.map(i => `${i.name} x${i.quantity}`),
+          items: data.orderItems.map(i => ({ name: i.name, quantity: i.quantity, variant: i.variant })),
           total: data.totalPrice,
           status: data.status,
-          address: data.shippingAddress.address
+          address: data.shippingAddress.address,
+          estimatedTime: data.estimatedDeliveryTime || 30,
+          createdAt: new Date(data.createdAt),
+          review: data.review,
+          otp: data.deliveryOTP,
         };
 
         setOrder(formattedOrder);
         setStatus(data.status);
-        // If status is Out for Delivery or later, we can start with a lower ETA
-        if (data.status === 'Delivered') setLiveEta(0);
-        else if (data.status === 'Out for Delivery') setLiveEta(900); // 15 mins
-        else setLiveEta(1500); // 25 mins initial
         
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching order:', err);
-        setLoading(false);
-      }
-    };
+        // Auto-show review modal if delivered and not yet reviewed
+        if (data.status === 'delivered' && !data.review) {
+          setShowReviewModal(true);
+        }
+        
+        // Calculate dynamic ETA based on time passed and status
+        const minutesPassed = Math.floor((Date.now() - new Date(data.createdAt)) / 60000);
+        let calculatedEta = Math.max(5, (data.estimatedDeliveryTime || 30) - minutesPassed);
+        
+        if (data.status === 'Delivered') setLiveEta(0);
+        else if (data.status === 'Out for Delivery') setLiveEta(Math.min(calculatedEta, 15) * 60); 
+        else setLiveEta(calculatedEta * 60);
+        
+    setLoading(false);
+  } catch (err) {
+    console.error('Error fetching order:', err);
+    setLoading(false);
+  }
+};
 
+fetchOrderDetails();
+
+// 2. Real-time Polling for Status Updates (Every 5s)
+const pollInterval = setInterval(() => {
+  if (status !== 'Delivered' && status !== 'Cancelled') {
     fetchOrderDetails();
+  }
+}, 5000);
+
+return () => clearInterval(pollInterval);
+}, [orderId, status]);
+
+  // 3. Socket.io Real-time Updates (Status & GPS)
+  useEffect(() => {
+    const socket = io('http://localhost:5000');
+    
+    socket.on('connect', () => {
+      socket.emit('joinOrder', orderId);
+      console.log('[Socket] Connected to order room:', orderId);
+    });
+
+    socket.on('RIDER_LOCATION_UPDATE', (data) => {
+      setRiderLocation({ lat: data.lat, lng: data.lng });
+      if (data.eta) setLiveEta(data.eta * 60); // Convert to seconds for the UI counter
+    });
+    
+    socket.on('ORDER_STATUS_UPDATED', (data) => {
+      console.log('[Socket] Status updated:', data.status);
+      setStatus(data.status);
+      
+      // Update ETA based on new status
+      if (data.status === 'delivered') setLiveEta(0);
+      else if (data.status === 'out_for_delivery') setLiveEta(prev => Math.min(prev, 600)); 
+    });
+
+    return () => socket.disconnect();
   }, [orderId]);
 
   if (loading) {
@@ -91,10 +144,13 @@ const OrderDetail = () => {
   }
 
   const steps = [
-    { label: 'Placed', icon: <Package size={20} />, active: true },
-    { label: 'Preparing', icon: <Utensils size={20} />, active: status !== 'Placed' },
-    { label: 'Out for Delivery', icon: <Truck size={20} />, active: status === 'Out for Delivery' || status === 'Delivered' },
-    { label: 'Delivered', icon: <CheckCircle size={20} />, active: status === 'Delivered' }
+    { label: 'Placed', icon: <CheckCircle size={20} />, active: true },
+    { label: 'Accepted', icon: <CheckCircle size={20} />, active: ['accepted', 'preparing', 'packed', 'ready_for_pickup', 'picked_up', 'out_for_delivery', 'delivered'].includes(status) },
+    { label: 'Preparing', icon: <Utensils size={20} />, active: ['preparing', 'packed', 'ready_for_pickup', 'picked_up', 'out_for_delivery', 'delivered'].includes(status) },
+    { label: 'Packed', icon: <Package size={20} />, active: ['packed', 'ready_for_pickup', 'picked_up', 'out_for_delivery', 'delivered'].includes(status) },
+    { label: 'Picked Up', icon: <Truck size={20} />, active: ['picked_up', 'out_for_delivery', 'delivered'].includes(status) },
+    { label: 'On Way', icon: <Truck size={20} />, active: ['out_for_delivery', 'delivered'].includes(status) },
+    { label: 'Delivered', icon: <Star size={20} />, active: status === 'delivered' }
   ];
 
   return (
@@ -107,11 +163,12 @@ const OrderDetail = () => {
         {/* Real-time Status Card */}
         <div className="bg-white rounded-[2.5rem] shadow-2xl border border-peach-50 overflow-hidden mb-8">
            {/* Map Header Section */}
-           <div className="relative h-[280px] sm:h-[350px] w-full bg-gray-100 overflow-hidden">
-              <DeliveryMap 
-                orderStatus={status} 
-                liveEta={liveEta} 
-              />
+            <div className="relative h-[280px] sm:h-[350px] w-full bg-gray-100 overflow-hidden">
+               <DeliveryMap 
+                 orderStatus={status} 
+                 liveEta={liveEta} 
+                 riderLocation={riderLocation}
+               />
               
               {/* Overlay Status Bar */}
               <div className="absolute top-6 left-6 right-6 z-10 flex items-center justify-between">
@@ -135,7 +192,26 @@ const OrderDetail = () => {
                     </div>
                  </div>
               </div>
-           </div>
+               {/* Delivery OTP Card (Only when out for delivery) */}
+               {(status === 'out_for_delivery' || status.toLowerCase() === 'out for delivery') && order.otp && (
+                 <div className="absolute bottom-6 left-6 right-6 z-20 animate-in slide-in-from-bottom duration-500">
+                    <div className="bg-gray-900 text-white p-5 rounded-2xl shadow-2xl border border-white/10 flex items-center justify-between">
+                       <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-warmOrange rounded-xl flex items-center justify-center text-white shrink-0">
+                             <CheckCircle size={28} />
+                          </div>
+                          <div>
+                             <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Handover Pin (OTP)</p>
+                             <p className="text-gray-400 text-[10px] font-medium leading-tight mt-0.5">Share with rider to verify delivery</p>
+                          </div>
+                       </div>
+                       <div className="bg-white/10 px-6 py-2 rounded-xl border border-white/20">
+                          <span className="text-3xl font-black tracking-[0.2em]">{order.otp}</span>
+                       </div>
+                    </div>
+                 </div>
+               )}
+            </div>
 
            <div className="p-8">
             {/* Tracking Timeline */}
@@ -180,8 +256,16 @@ const OrderDetail = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-6 font-serif border-b border-gray-50 pb-2">Order Summary</h3>
                 <div className="space-y-4">
                   {order.items.map((item, idx) => (
-                    <div key={idx} className="flex justify-between text-sm font-medium text-gray-700">
-                      <span>{item}</span>
+                    <div key={idx} className="flex justify-between items-center text-sm font-bold text-gray-700 bg-white p-3 rounded-2xl border border-peach-50 shadow-sm">
+                      <div className="flex flex-col">
+                        <span className="text-gray-900">{item.name}</span>
+                        {item.variant && (
+                          <span className="text-[10px] font-black text-warmOrange/60 uppercase tracking-widest mt-1">
+                            Size: {item.variant}
+                          </span>
+                        )}
+                      </div>
+                      <span className="bg-peach-100 text-warmOrange px-2.5 py-1 rounded-lg text-[10px] font-black">x{item.quantity}</span>
                     </div>
                   ))}
                   <div className="pt-4 border-t border-peach-50 flex justify-between items-center mt-4">
@@ -194,7 +278,7 @@ const OrderDetail = () => {
               {/* Delivery Details */}
               <div>
                 <h3 className="text-xl font-bold text-gray-900 mb-6 font-serif border-b border-gray-50 pb-2">Delivery Details</h3>
-                <div className="bg-peach-50/50 p-6 rounded-3xl border border-peach-100">
+                <div className="bg-peach-50/50 p-6 rounded-3xl border border-peach-100 mb-8">
                   <div className="flex items-start space-x-3 mb-6">
                     <div className="bg-white p-2 rounded-xl text-warmOrange shadow-sm">
                       <MapPin size={20} />
@@ -216,6 +300,29 @@ const OrderDetail = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Patient Review Display */}
+                {order.review && (
+                  <div className="bg-white p-6 rounded-[2rem] border-2 border-warmOrange/10 shadow-xl animate-in slide-in-from-right duration-500 relative overflow-hidden group">
+                     <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+                        <Star size={80} className="text-warmOrange fill-warmOrange" />
+                     </div>
+                     <div className="relative z-10">
+                        <p className="text-[10px] font-black text-warmOrange uppercase tracking-[0.2em] mb-4">Your Feedback</p>
+                        <div className="flex gap-1 mb-4">
+                           {[1,2,3,4,5].map(s => (
+                             <Star key={s} size={18} className={s <= order.review.rating ? 'text-warmOrange fill-warmOrange' : 'text-gray-200'} />
+                           ))}
+                        </div>
+                        {order.review.comment && (
+                           <div className="flex gap-3">
+                              <MessageSquare size={16} className="text-gray-300 shrink-0 mt-1" />
+                              <p className="text-gray-700 font-bold italic text-sm leading-relaxed">"{order.review.comment}"</p>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -224,9 +331,14 @@ const OrderDetail = () => {
               <div className="bg-orange-50/50 p-8 rounded-[2rem] border border-orange-100 text-center">
                 <h4 className="text-warmOrange font-black text-xs uppercase tracking-widest mb-6">Live Simulation Control</h4>
                 <div className="flex flex-wrap justify-center gap-4">
-                  {['Placed', 'Preparing', 'Out for Delivery', 'Delivered'].map(s => (
+                  {[
+                    { label: 'Placed', value: 'pending' },
+                    { label: 'Preparing', value: 'processing' },
+                    { label: 'Out for Delivery', value: 'out_for_delivery' },
+                    { label: 'Delivered', value: 'delivered' }
+                  ].map(s => (
                     <button
-                      key={s}
+                      key={s.value}
                       onClick={async () => {
                         try {
                           const token = localStorage.getItem('userToken');
@@ -236,20 +348,20 @@ const OrderDetail = () => {
                               'Content-Type': 'application/json',
                               'Authorization': `Bearer ${token}`
                             },
-                            body: JSON.stringify({ status: s })
+                            body: JSON.stringify({ status: s.value })
                           });
                           if (res.ok) {
-                            setStatus(s);
-                            if (s === 'Delivered') setLiveEta(0);
-                            else if (s === 'Out for Delivery') setLiveEta(900); // 15m
+                            setStatus(s.value);
+                            if (s.value === 'delivered') setLiveEta(0);
+                            else if (s.value === 'out_for_delivery') setLiveEta(Math.min(liveEta, 900)); 
                           }
                         } catch (err) {
                           console.error('Update failed:', err);
                         }
                       }}
-                      className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${status === s ? 'bg-warmOrange text-white shadow-xl scale-105' : 'bg-white text-gray-500 border-2 border-gray-100 hover:border-warmOrange hover:text-warmOrange'}`}
+                      className={`px-6 py-3 rounded-2xl text-xs font-black transition-all ${status === s.value ? 'bg-warmOrange text-white shadow-xl scale-105' : 'bg-white text-gray-500 border-2 border-gray-100 hover:border-warmOrange hover:text-warmOrange'}`}
                     >
-                      {s}
+                      {s.label}
                     </button>
                   ))}
                 </div>
@@ -260,23 +372,23 @@ const OrderDetail = () => {
                     onClick={async () => {
                       try {
                         const token = localStorage.getItem('userToken');
-                        // 1. Reset to Placed
+                        // 1. Reset to Placed (pending)
                         await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                          body: JSON.stringify({ status: 'Placed' })
+                          body: JSON.stringify({ status: 'pending' })
                         });
-                        setStatus('Placed');
+                        setStatus('pending');
                         setLiveEta(1500); // 25m
 
-                        // 2. Transition to Preparing after 3s
+                        // 2. Transition to Preparing (processing) après 3s
                         setTimeout(async () => {
                            await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
                              method: 'PUT',
                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                             body: JSON.stringify({ status: 'Preparing' })
+                             body: JSON.stringify({ status: 'processing' })
                            });
-                           setStatus('Preparing');
+                           setStatus('processing');
                         }, 3000);
 
                         // 3. Transition to Out for Delivery after 6s
@@ -284,10 +396,9 @@ const OrderDetail = () => {
                            await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
                              method: 'PUT',
                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                             body: JSON.stringify({ status: 'Out for Delivery' })
+                             body: JSON.stringify({ status: 'out_for_delivery' })
                            });
-                           setStatus('Out for Delivery');
-                           setLiveEta(900); // 15m
+                           setStatus('out_for_delivery');
                         }, 6000);
 
                         // 4. Final Transition to Delivered after 9s
@@ -295,11 +406,12 @@ const OrderDetail = () => {
                           await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({ status: 'Delivered' })
+                            body: JSON.stringify({ status: 'delivered' })
                           });
-                          setStatus('Delivered');
+                          setStatus('delivered');
                           setLiveEta(0); // 0m
-                       }, 12000); // 12s total (allows for some tracking movement)
+                       }, 12000); 
+
                       } catch (err) {
                         console.error('Simulation failed:', err);
                       }
@@ -317,6 +429,23 @@ const OrderDetail = () => {
           </div>
         </div>
       </div>
+      {/* Review Modal */}
+      {showReviewModal && (
+        <ReviewModal 
+          orderId={order.id} 
+          onCancel={() => setShowReviewModal(false)} 
+          onSuccess={() => {
+            setShowReviewModal(false);
+            // Re-fetch data to show the review on page
+            window.location.reload(); 
+          }} 
+        />
+      )}
+
+      {/* Real-time Order Chat */}
+      {status !== 'delivered' && status !== 'cancelled' && (
+        <OrderChat orderId={order.id} senderRole="customer" />
+      )}
     </div>
   );
 };

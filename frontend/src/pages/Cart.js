@@ -36,31 +36,36 @@ const Cart = () => {
         {/* Cart Items List */}
         <div className="lg:w-2/3 space-y-4">
           {cartItems.map((item) => (
-            <div key={item.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-peach-50 flex flex-col sm:flex-row items-center gap-6">
+            <div key={`${item.id}-${item.variant?.name}`} className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-peach-50 flex flex-col sm:flex-row items-center gap-6">
               <img 
                 src={item.image} 
                 alt={item.name} 
-                className="w-full sm:w-32 h-32 object-cover rounded-xl"
+                className="w-full sm:w-32 h-32 object-cover rounded-xl shadow-lg border border-peach-50"
               />
               <div className="flex-grow flex flex-col sm:flex-row items-center sm:items-start justify-between w-full">
                 <div className="text-center sm:text-left mb-4 sm:mb-0">
                   <h3 className="text-xl font-bold text-gray-900 mb-1">{item.name}</h3>
-                  <p className="text-gray-500 text-sm mb-2">₹{String(item.price).replace(/[₹$,]/g, '')}</p>
+                  {item.variant && (
+                    <span className="inline-block px-3 py-1 bg-peach-50 text-warmOrange rounded-lg text-[10px] font-black uppercase tracking-widest mb-3 border border-peach-100">
+                      Size: {item.variant.name}
+                    </span>
+                  )}
+                  <p className="text-gray-500 text-sm font-bold">₹{String(item.price).replace(/[₹$,]/g, '')}</p>
                 </div>
                 
                 <div className="flex items-center gap-6">
                   {/* Quantity Controls */}
-                  <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                  <div className="flex items-center border border-gray-200 rounded-2xl overflow-hidden bg-gray-50 shadow-inner">
                     <button 
-                      onClick={() => updateQuantity(item.id, -1)}
-                      className="px-3 py-2 text-gray-600 hover:text-warmOrange hover:bg-peach-50 transition-colors"
+                      onClick={() => updateQuantity(item.id, item.variant?.name, -1)}
+                      className="px-4 py-2 text-gray-600 hover:text-warmOrange hover:bg-peach-50 transition-all font-black text-lg"
                     >
                       <Minus size={16} />
                     </button>
-                    <span className="w-10 text-center font-medium">{item.quantity}</span>
+                    <span className="w-10 text-center font-black text-gray-900">{item.quantity}</span>
                     <button 
-                      onClick={() => updateQuantity(item.id, 1)}
-                      className="px-3 py-2 text-gray-600 hover:text-warmOrange hover:bg-peach-50 transition-colors"
+                      onClick={() => updateQuantity(item.id, item.variant?.name, 1)}
+                      className="px-4 py-2 text-gray-600 hover:text-warmOrange hover:bg-peach-50 transition-all font-black text-lg"
                     >
                       <Plus size={16} />
                     </button>
@@ -68,14 +73,14 @@ const Cart = () => {
                   
                   {/* Item Total & Remove */}
                   <div className="flex flex-col items-end gap-2">
-                    <span className="font-bold text-lg text-warmOrange">
+                    <span className="font-black text-xl text-warmOrange tracking-tighter">
                       ₹{(parseFloat(String(item.price).replace(/[₹$,]/g, '')) * item.quantity)}
                     </span>
                     <button 
-                      onClick={() => removeFromCart(item.id)}
-                      className="text-gray-400 hover:text-red-500 transition-colors flex items-center text-sm"
+                      onClick={() => removeFromCart(item.id, item.variant?.name)}
+                      className="text-gray-400 hover:text-red-500 transition-colors flex items-center text-[10px] font-black uppercase tracking-widest"
                     >
-                      <Trash2 size={16} className="mr-1" /> Remove
+                      <Trash2 size={12} className="mr-1.5" /> Remove
                     </button>
                   </div>
                 </div>

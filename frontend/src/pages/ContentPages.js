@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 
 export const Careers = () => (
   <div className="max-w-4xl mx-auto px-4 py-16">
-    <h1 className="text-4xl font-bold text-gray-900 mb-6 font-serif text-warmOrange">Careers at Hungry</h1>
+    <h1 className="text-4xl font-bold text-gray-900 mb-6 font-serif text-warmOrange">Jobs at Hungry</h1>
     <div className="bg-white p-8 rounded-3xl shadow-sm border border-peach-50 text-gray-700 space-y-4">
-      <p className="text-lg">Join us in our mission to bring the best food delivery experience to everyone. We're a fast-growing, passionate team.</p>
+      <p className="text-lg">Join us and help us grow. We are a fast and friendly team.</p>
       
-      <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Open Positions</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mt-8 mb-4">Open Jobs</h2>
       
       <div className="border border-gray-100 rounded-xl p-4 hover:shadow-md transition-shadow">
         <h3 className="text-xl font-bold text-gray-900">Frontend Engineer (React)</h3>
@@ -26,25 +26,84 @@ export const Careers = () => (
   </div>
 );
 
-export const Blog = () => (
-  <div className="max-w-4xl mx-auto px-4 py-16">
-    <h1 className="text-4xl font-bold text-gray-900 mb-6 font-serif text-warmOrange">Hungry Blog</h1>
-    <div className="grid gap-8">
-      <article className="bg-white p-6 rounded-3xl shadow-sm border border-peach-50">
-        <span className="text-sm font-bold text-warmOrange tracking-wider uppercase mb-2 block">Food Tech</span>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">How we guarantee 30-minute delivery</h2>
-        <p className="text-gray-600 mb-4">Behind the scenes look at our routing algorithms and logistics that make ultra-fast food delivery possible.</p>
-        <button className="text-warmOrange font-medium hover:underline">Read Article</button>
-      </article>
-      <article className="bg-white p-6 rounded-3xl shadow-sm border border-peach-50">
-        <span className="text-sm font-bold text-warmOrange tracking-wider uppercase mb-2 block">Cuisine Focus</span>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Top 10 Pizzas to try this Summer</h2>
-        <p className="text-gray-600 mb-4">A curated list of our most popular and beloved pizza options across all our restaurant partners.</p>
-        <button className="text-warmOrange font-medium hover:underline">Read Article</button>
-      </article>
+export const Blog = () => {
+  const [subscribed, setSubscribed] = React.useState(false);
+  const [expandedStory, setExpandedStory] = React.useState(null);
+
+  const handleJoin = (e) => {
+    e.preventDefault();
+    setSubscribed(true);
+    setTimeout(() => setSubscribed(false), 3000);
+  };
+
+  const handleReadStory = () => {
+    alert("Full story is coming soon! We are writing these stories for you.");
+  };
+
+  const stories = [
+    {
+      id: 1,
+      tag: 'Cooking Secrets',
+      title: 'Our Secret to 100% Freshness',
+      excerpt: 'Learn how we get fresh food every day to make sure your meal is tasty and healthy.',
+      fullContent: 'At Hungry, we believe that good food needs fresh items. Every morning at 5 AM, our team goes to local markets to get fresh vegetables and milk. We don’t use old stock – if it’s not fresh from today, we don’t use it. Our 100% veg promise means everything we use is checked for quality.'
+    },
+    {
+      id: 2,
+      tag: 'Community',
+      title: 'Supporting Our Local Chefs',
+      excerpt: 'Read about our local restaurant partners who cook tasty food for you.',
+      fullContent: 'We work with local home kitchens and small restaurants that have been cooking for a long time. By helping them with delivery and our app, we help these local chefs find more customers. When you order from Hungry, you are also helping these local businesses grow.'
+    }
+  ];
+
+  return (
+    <div className="bg-cream min-h-screen">
+      <div className="max-w-6xl mx-auto px-6 py-10 md:py-16">
+        <div className="bg-gradient-to-br from-warmOrange to-orange-600 rounded-[3rem] p-12 md:p-16 text-center mb-16 shadow-xl shadow-warmOrange/20 relative overflow-hidden">
+          <h1 className="text-4xl md:text-6xl font-black text-white mb-6 font-serif relative z-10">Hungry Stories</h1>
+        <p className="text-orange-50 text-lg md:text-xl max-w-2xl mx-auto italic relative z-10">Stories from our kitchen to your doorstep. Pure veg and always fresh.</p>
+        <div className="w-24 h-1.5 bg-white/40 mx-auto mt-8 rounded-full relative z-10"></div>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-72 h-72 bg-white opacity-10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl"></div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+        {stories.map((story) => (
+          <article 
+            key={story.id}
+            onClick={() => setExpandedStory(expandedStory === story.id ? null : story.id)} 
+            className={`group bg-white p-8 rounded-[2rem] border transition-all duration-500 cursor-pointer ${expandedStory === story.id ? 'border-warmOrange shadow-2xl scale-[1.02]' : 'border-peach-50 shadow-sm hover:shadow-xl hover:border-warmOrange/20'}`}
+          >
+            <span className="text-[10px] font-black uppercase tracking-widest text-warmOrange bg-warmOrange/10 px-3 py-1 rounded-lg mb-4 inline-block">{story.tag}</span>
+            <h2 className="text-2xl font-black text-gray-900 mb-4 group-hover:text-warmOrange transition-colors">{story.title}</h2>
+            <p className="text-gray-600 leading-relaxed mb-6">
+              {expandedStory === story.id ? story.fullContent : story.excerpt}
+            </p>
+            <button className="text-warmOrange font-bold flex items-center gap-2 transition-transform">
+              {expandedStory === story.id ? 'Close Story' : 'Read Full Story'} &rarr;
+            </button>
+          </article>
+        ))}
+      </div>
+
+      <div className="mt-20 bg-gradient-to-br from-peach-50 to-orange-50 p-12 rounded-[3rem] text-center border border-peach-200 shadow-sm relative overflow-hidden">
+        <div className="relative z-10">
+          <h3 className="text-3xl font-black text-gray-900 mb-4 font-serif">Never miss a flavor!</h3>
+          <p className="text-gray-600 text-md mb-8 max-w-md mx-auto">Subscribe to our newsletter for exclusive offers, fresh stories, and new dish alerts straight to your inbox.</p>
+          <form onSubmit={handleJoin} className="flex flex-col sm:flex-row max-w-md mx-auto gap-3">
+            <input required type="email" placeholder="Your Email Address" className="flex-1 px-6 py-4 rounded-full border-2 border-white focus:outline-none focus:border-warmOrange focus:ring-4 focus:ring-warmOrange/10 shadow-sm text-sm" />
+            <button type="submit" className={`px-8 py-4 rounded-full font-black text-sm uppercase tracking-widest shadow-lg transition-all ${subscribed ? 'bg-green-500 text-white hover:bg-green-600' : 'bg-warmOrange text-white shadow-warmOrange/30 hover:shadow-warmOrange/50 hover:bg-orange-600 hover:-translate-y-1'}`}>
+              {subscribed ? 'Subscribed!' : 'Subscribe'}
+            </button>
+          </form>
+        </div>
+      </div>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export const Partner = () => (
   <div className="max-w-4xl mx-auto px-4 py-16 text-center">

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+// Dashboard for Hungry Users - Optimized for Premium Experience
 import { useCart } from '../context/CartContext';
+import SupportChatWidget from '../components/SupportChatWidget';
 import { 
   User, MapPin, Package, Clock, CheckCircle, Home, Briefcase, Plus, 
-  Edit2, Trash2, CreditCard, LogOut, Star, Settings, Shield, Phone, ShoppingBag, X, ChevronRight
+  Edit2, Trash2, CreditCard, LogOut, Star, Settings, Shield, Phone, ShoppingBag, X, ChevronRight, Gift, Headphones, MessageSquare, AlertCircle, Send, MessageCircle, Mail
 } from 'lucide-react';
 
 const dummyOrders = [
@@ -45,6 +47,7 @@ const Dashboard = () => {
 
   // Orders State
   const [orders, setOrders] = useState([]);
+  const [menuItems, setMenuItems] = useState([]);
   
   // Review Modal State
   const [reviewOrder, setReviewOrder] = useState(null);
@@ -54,26 +57,14 @@ const Dashboard = () => {
   const [deliveryComment, setDeliveryComment] = useState('');
 
   // Address State
-  const [userAddresses, setUserAddresses] = useState(() => {
-    const saved = localStorage.getItem('userAddresses');
-    if (saved) return JSON.parse(saved);
-    const legacy = localStorage.getItem('userAddress');
-    return legacy ? [{ id: '1', type: 'Home', details: legacy || '123 Culinary Boulevard, Apt 4B, Foodville, NY 10001' }] : [];
-  });
+  const [userAddresses, setUserAddresses] = useState([]);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
   const [newAddress, setNewAddress] = useState('');
   const [newAddressType, setNewAddressType] = useState('Home');
 
   // Payment State
-  const [userPayments, setUserPayments] = useState(() => {
-    const saved = localStorage.getItem('userPayments');
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: '1', type: 'Card', details: '**** **** **** 4242' },
-      { id: '2', type: 'UPI', details: 'user@okhdfcbank' }
-    ];
-  });
+  const [userPayments, setUserPayments] = useState([]);
   const [isAddingPayment, setIsAddingPayment] = useState(false);
   const [newPaymentType, setNewPaymentType] = useState('Card');
   const [newPaymentDetails, setNewPaymentDetails] = useState('');
@@ -82,7 +73,9 @@ const Dashboard = () => {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editName, setEditName] = useState(userName);
   const [editPhone, setEditPhone] = useState(userPhone);
-  const [editPassword, setEditPassword] = useState('');
+
+  // Chat State
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   useEffect(() => {
     const isAuthenticated = localStorage.getItem('isAuthenticated');
@@ -90,94 +83,154 @@ const Dashboard = () => {
       navigate('/login');
     }
 
-    const fetchOrders = async () => {
+    const fetchData = async () => {
       try {
         const token = localStorage.getItem('userToken');
-        const response = await fetch('http://localhost:5000/api/orders/myorders', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        const data = await response.json();
         
-        // Map backend orders to frontend format
-        const formattedOrders = data.map(o => ({
-          id: o._id,
-          date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-          items: o.orderItems.map(i => `${i.name} x${i.quantity}`),
-          total: `₹${o.totalPrice}`,
-          status: o.status,
-          review: o.review
-        }));
+        // Fetch Orders
+        const ordRes = await fetch('http://localhost:5000/api/orders/myorders', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (ordRes.ok) {
+          const ordData = await ordRes.json();
+          const formattedOrders = ordData.map(o => ({
+            id: o._id,
+            date: new Date(o.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+            items: o.orderItems.map(i => `${i.name} x${i.quantity}`),
+            total: `₹${o.totalPrice}`,
+            status: o.status,
+            review: o.review
+          }));
+          setOrders(formattedOrders);
+        }
 
-        setOrders(formattedOrders);
+        // Fetch Profile
+        const profRes = await fetch('http://localhost:5000/api/auth/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          setUserName(profData.name);
+          setUserPhone(profData.phone);
+          setUserEmail(profData.email);
+          if (profData.addresses && profData.addresses.length > 0) setUserAddresses(profData.addresses);
+          if (profData.payments && profData.payments.length > 0) setUserPayments(profData.payments);
+        }
+
+        // Fetch Menu Items for Recommendations
+        const menuRes = await fetch('http://localhost:5000/api/menu');
+        if (menuRes.ok) {
+          const menuData = await menuRes.json();
+          setMenuItems(menuData);
+        }
       } catch (err) {
-        console.error('Error fetching orders:', err);
-        const savedOrders = JSON.parse(localStorage.getItem('userOrders') || '[]');
-        setOrders(savedOrders);
+        console.error('Error fetching dashboard data:', err);
       }
     };
 
-    fetchOrders();
+    fetchData();
   }, [navigate]);
-
-  useEffect(() => {
-    localStorage.setItem('userAddresses', JSON.stringify(userAddresses));
-  }, [userAddresses]);
-
-  useEffect(() => {
-    localStorage.setItem('userPayments', JSON.stringify(userPayments));
-  }, [userPayments]);
 
   const handleLogout = () => {
     localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('isAdminAuthenticated');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminName');
+    localStorage.removeItem('userToken');
     navigate('/');
   };
 
-  const handleSaveProfile = () => {
-    setUserName(editName);
-    setUserPhone(editPhone);
-    localStorage.setItem('userName', editName);
-    localStorage.setItem('userPhone', editPhone);
-    if (editPassword) {
-      localStorage.setItem('userPassword', editPassword); // Note: Simple mock logic for frontend only
+  const handleSaveProfile = async () => {
+    try {
+      const token = localStorage.getItem('userToken');
+      const response = await fetch('http://localhost:5000/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ name: editName, phone: editPhone })
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setUserName(data.name);
+        setUserPhone(data.phone);
+        localStorage.setItem('userName', data.name);
+        localStorage.setItem('userPhone', data.phone);
+        setIsEditingProfile(false);
+        alert('Profile updated successfully!');
+      } else {
+        const errData = await response.json();
+        alert(errData.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      alert('Error updating profile');
     }
-    setIsEditingProfile(false);
   };
 
-  const handleSaveAddress = () => {
-    if (newAddress.length < 5) return;
-    if (editingAddressId) {
-      setUserAddresses(prev => prev.map(a => a.id === editingAddressId ? { ...a, type: newAddressType, details: newAddress } : a));
-    } else {
-      setUserAddresses(prev => [...prev, { id: Date.now().toString(), type: newAddressType, details: newAddress }]);
+  const updateBackendProfile = async (updateObj) => {
+    try {
+      const token = localStorage.getItem('userToken');
+      await fetch('http://localhost:5000/api/auth/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updateObj)
+      });
+    } catch (err) {
+      console.error('Error syncing profile:', err);
     }
+  };
+
+  const handleSaveAddress = async () => {
+    if (newAddress.length < 5) return;
+    let updatedAddresses;
+    if (editingAddressId) {
+      updatedAddresses = userAddresses.map(a => a.id === editingAddressId ? { ...a, type: newAddressType, details: newAddress } : a);
+    } else {
+      updatedAddresses = [...userAddresses, { id: Date.now().toString(), type: newAddressType, details: newAddress }];
+    }
+    setUserAddresses(updatedAddresses);
+    await updateBackendProfile({ addresses: updatedAddresses });
     setIsAddingAddress(false);
     setEditingAddressId(null);
     setNewAddress('');
     setNewAddressType('Home');
   };
 
-  const handleDeleteAddress = (id) => {
-    setUserAddresses(prev => prev.filter(a => a.id !== id));
+  const handleDeleteAddress = async (id) => {
+    const updatedAddresses = userAddresses.filter(a => a.id !== id);
+    setUserAddresses(updatedAddresses);
+    await updateBackendProfile({ addresses: updatedAddresses });
   };
 
   const handleEditAddress = (addr) => {
     setEditingAddressId(addr.id);
     setNewAddress(addr.details);
-    setNewAddressType(addr.type);
+    setNewAddressType(addr.type || 'Home');
     setIsAddingAddress(true);
   };
 
-  const handleSavePayment = () => {
-    setUserPayments(prev => [...prev, { id: Date.now().toString(), type: newPaymentType, details: newPaymentDetails || newPaymentType }]);
+  const handleSavePayment = async () => {
+    const updatedPayments = [...userPayments, { id: Date.now().toString(), type: newPaymentType, details: newPaymentDetails || newPaymentType }];
+    setUserPayments(updatedPayments);
+    await updateBackendProfile({ payments: updatedPayments });
     setIsAddingPayment(false);
     setNewPaymentDetails('');
     setNewPaymentType('Card');
   };
 
-  const handleDeletePayment = (id) => {
-    setUserPayments(prev => prev.filter(p => p.id !== id));
+  const handleDeletePayment = async (id) => {
+    const updatedPayments = userPayments.filter(p => p.id !== id);
+    setUserPayments(updatedPayments);
+    await updateBackendProfile({ payments: updatedPayments });
   };
 
   const handleReorder = (orderItems) => {
@@ -258,106 +311,7 @@ const Dashboard = () => {
     window.URL.revokeObjectURL(url);
   };
 
-  if (userRole === 'admin') {
-    const totalOrders = orders.length;
-    const totalRevenue = orders.reduce((sum, order) => {
-        const amount = parseFloat(order.total.toString().replace(/[₹$,]/g, ''));
-        return sum + (isNaN(amount) ? 0 : amount);
-    }, 0);
-    const avgOrderValue = totalOrders > 0 ? (totalRevenue / totalOrders).toFixed(0) : 0;
 
-    return (
-      <div className="bg-cream min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-        <div className="w-full px-4 sm:px-8 md:px-12 lg:px-16 pt-8 md:pt-0">
-          <div className="flex justify-between items-center mb-10">
-            <div className="flex flex-col">
-                <span className="text-warmOrange font-bold tracking-widest text-sm uppercase mb-1 flex items-center"><Star size={14} className="mr-1" fill="currentColor"/> Admin Panel</span>
-                <h2 className="text-4xl font-black text-gray-900 font-serif tracking-tight">Business Overview</h2>
-                <p className="text-gray-500 mt-2 text-sm leading-relaxed max-w-md">Track your real-time performance, monitor revenue, and manage recent orders effectively.</p>
-            </div>
-            <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-3 bg-white px-4 py-2 rounded-full border border-gray-200 shadow-sm">
-                    <div className="w-8 h-8 rounded-full bg-peach-100 flex items-center justify-center text-warmOrange">
-                        <User size={16} />
-                    </div>
-                    <span className="font-bold text-gray-900">{userName}</span>
-                </div>
-                <button onClick={handleLogout} className="flex items-center space-x-2 bg-red-50 text-red-500 px-4 py-2 rounded-full border border-red-100 hover:bg-red-100 transition-colors font-bold text-sm shadow-sm">
-                    <LogOut size={16} />
-                    <span>Logout</span>
-                </button>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-peach-50 relative overflow-hidden group">
-                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-                  <div className="relative z-10">
-                      <p className="text-gray-500 font-bold uppercase tracking-wider text-sm mb-2">Total Revenue (Profit)</p>
-                      <h3 className="text-4xl font-black text-gray-900">₹{totalRevenue.toLocaleString()}</h3>
-                      <p className="text-green-500 text-sm font-bold mt-2 flex items-center"><span className="mr-1">↑</span> 12% from last month</p>
-                  </div>
-              </div>
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-peach-50 relative overflow-hidden group">
-                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-                  <div className="relative z-10">
-                      <p className="text-gray-500 font-bold uppercase tracking-wider text-sm mb-2">Total Orders</p>
-                      <h3 className="text-4xl font-black text-gray-900">{totalOrders}</h3>
-                      <p className="text-blue-500 text-sm font-bold mt-2 flex items-center"><span className="mr-1">↑</span> 8% from last month</p>
-                  </div>
-              </div>
-              <div className="bg-white p-8 rounded-3xl shadow-sm border border-peach-50 relative overflow-hidden group">
-                  <div className="absolute -right-6 -top-6 w-24 h-24 bg-warmOrange/10 rounded-full group-hover:scale-150 transition-transform duration-500"></div>
-                  <div className="relative z-10">
-                      <p className="text-gray-500 font-bold uppercase tracking-wider text-sm mb-2">Avg. Order Value</p>
-                      <h3 className="text-4xl font-black text-gray-900">₹{avgOrderValue}</h3>
-                      <p className="text-warmOrange text-sm font-bold mt-2 flex items-center"><span className="mr-1">↑</span> 5% from last month</p>
-                  </div>
-              </div>
-          </div>
-
-          <div className="bg-white rounded-3xl shadow-sm border border-peach-50 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                  <h3 className="text-xl font-bold text-gray-900 font-serif">Recent Transactions</h3>
-                  <button onClick={handleExportCSV} className="text-sm font-bold text-warmOrange hover:bg-peach-50 px-4 py-2 rounded-lg transition-colors">Export CSV</button>
-              </div>
-              <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
-                      <thead>
-                          <tr className="bg-white text-gray-400 text-sm uppercase tracking-wider border-b border-gray-100">
-                              <th className="p-6 font-bold">Order ID</th>
-                              <th className="p-6 font-bold">Date</th>
-                              <th className="p-6 font-bold">Items</th>
-                              <th className="p-6 font-bold">Total</th>
-                              <th className="p-6 font-bold">Status</th>
-                          </tr>
-                      </thead>
-                      <tbody>
-                          {orders.map((order, idx) => (
-                              <tr key={order.id} className={`border-b border-gray-50 hover:bg-gray-50 transition-colors ${idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}>
-                                  <td className="p-6 font-bold text-gray-900">{order.id}</td>
-                                  <td className="p-6 text-gray-500 whitespace-nowrap">{order.date}</td>
-                                  <td className="p-6 text-gray-600 truncate max-w-xs" title={order.items.join(', ')}>{order.items.join(', ')}</td>
-                                  <td className="p-6 font-bold text-gray-900">₹{order.total.toString().replace(/[₹$,]/g, '')}</td>
-                                  <td className="p-6">
-                                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                          order.status === 'Delivered' ? 'bg-green-100 text-green-700' : 
-                                          order.status === 'Placed' ? 'bg-blue-100 text-blue-700' : 'bg-warmOrange/20 text-warmOrange'
-                                      }`}>{order.status}</span>
-                                  </td>
-                              </tr>
-                          ))}
-                          {orders.length === 0 && (
-                              <tr><td colSpan="5" className="p-10 text-center text-gray-400 font-medium">No order history available.</td></tr>
-                          )}
-                      </tbody>
-                  </table>
-              </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   // Regular User Layout
   return (
@@ -388,6 +342,9 @@ const Dashboard = () => {
                  <button onClick={() => setActiveTab('payments')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${activeTab === 'payments' ? 'bg-warmOrange text-white shadow-md' : 'text-gray-600 hover:bg-peach-50 hover:text-warmOrange'}`}>
                     <CreditCard size={18} /> <span>Payment Methods</span>
                  </button>
+                 <button onClick={() => setActiveTab('support')} className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm ${activeTab === 'support' ? 'bg-warmOrange text-white shadow-md' : 'text-gray-600 hover:bg-peach-50 hover:text-warmOrange'}`}>
+                    <Headphones size={18} /> <span>Help & Support</span>
+                 </button>
                  <div className="pt-4 mt-4 border-t border-gray-100">
                    <button onClick={handleLogout} className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-colors font-bold text-sm text-red-500 hover:bg-red-50">
                       <LogOut size={18} /> <span>Logout</span>
@@ -413,10 +370,6 @@ const Dashboard = () => {
                     <div>
                       <label className="block text-sm font-bold text-gray-700 mb-2">Phone Number</label>
                       <input value={editPhone} onChange={e => setEditPhone(e.target.value)} className="w-full p-3 border border-gray-200 rounded-xl focus:border-warmOrange focus:ring-2 outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-bold text-gray-700 mb-2">New Password (optional)</label>
-                      <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="Leave blank to keep current" className="w-full p-3 border border-gray-200 rounded-xl focus:border-warmOrange focus:ring-2 outline-none" />
                     </div>
                     <div className="flex space-x-3 pt-4">
                        <button onClick={handleSaveProfile} className="flex-1 bg-warmOrange text-white font-bold py-3 rounded-xl hover:bg-peach-600 transition-colors">Save Changes</button>
@@ -590,19 +543,19 @@ const Dashboard = () => {
                </div>
                
                {isAddingPayment ? (
-                 <div className="border border-gray-200 p-6 rounded-2xl bg-white mb-4 animate-in fade-in slide-in-from-top-2">
+                 <div className="border border-peach-200 p-6 rounded-2xl bg-peach-50/20 mb-4 animate-in fade-in slide-in-from-top-2">
                     <p className="font-bold text-gray-900 mb-4">Add Payment Method</p>
                     <div className="flex space-x-2 mb-4">
                       {['Card', 'UPI', 'Cash on Delivery'].map(type => (
-                        <button key={type} onClick={() => setNewPaymentType(type)} className={`px-4 py-2 text-xs font-bold rounded-full border transition-colors ${newPaymentType === type ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-500 border-gray-200'}`}>{type}</button>
+                        <button key={type} onClick={() => setNewPaymentType(type)} className={`px-4 py-2 text-xs font-bold rounded-full border transition-colors ${newPaymentType === type ? 'bg-warmOrange text-white border-warmOrange' : 'bg-white text-gray-500 border-gray-200 hover:border-warmOrange hover:text-warmOrange'}`}>{type}</button>
                       ))}
                     </div>
                     {newPaymentType !== 'Cash on Delivery' && (
-                       <input value={newPaymentDetails} onChange={(e) => setNewPaymentDetails(e.target.value)} className="w-full p-4 border border-gray-200 focus:border-gray-500 rounded-xl bg-gray-50 outline-none focus:ring-2 focus:ring-gray-200 text-sm mb-4" placeholder={newPaymentType === 'Card' ? 'Card Number (**** **** **** ****)' : 'UPI ID (example@upi)'} />
+                       <input value={newPaymentDetails} onChange={(e) => setNewPaymentDetails(e.target.value)} className="w-full p-4 border border-peach-100 focus:border-warmOrange rounded-xl bg-white outline-none focus:ring-2 focus:ring-warmOrange/20 text-sm mb-4" placeholder={newPaymentType === 'Card' ? 'Card Number (**** **** **** ****)' : 'UPI ID (example@upi)'} />
                     )}
                     <div className="flex space-x-3">
-                       <button onClick={handleSavePayment} disabled={newPaymentType !== 'Cash on Delivery' && newPaymentDetails.length < 5} className="bg-gray-900 text-white text-sm font-bold py-3 px-6 rounded-xl hover:bg-gray-800 disabled:opacity-50">Save Method</button>
-                       <button onClick={() => { setIsAddingPayment(false); setNewPaymentDetails(''); }} className="bg-white text-gray-500 border border-gray-200 text-sm font-bold py-3 px-6 rounded-xl hover:bg-gray-50">Cancel</button>
+                       <button onClick={handleSavePayment} disabled={newPaymentType !== 'Cash on Delivery' && newPaymentDetails.length < 5} className="bg-warmOrange text-white text-sm font-bold py-3 px-6 rounded-xl hover:bg-peach-600 shadow-lg shadow-warmOrange/20 disabled:opacity-50 transition-all">Save Method</button>
+                       <button onClick={() => { setIsAddingPayment(false); setNewPaymentDetails(''); }} className="bg-white text-gray-500 border border-gray-100 text-sm font-bold py-3 px-6 rounded-xl hover:bg-peach-50 transition-all">Cancel</button>
                     </div>
                  </div>
                ) : (
@@ -610,6 +563,38 @@ const Dashboard = () => {
                    <Plus size={20} /><span>Add New Payment Method</span>
                  </button>
                )}
+             </div>
+          )}
+
+          {/* Support Tab */}
+          {activeTab === 'support' && (
+            <div className="bg-white p-8 rounded-3xl shadow-sm border border-peach-50 animate-in fade-in slide-in-from-bottom-4">
+               <h2 className="text-2xl font-bold text-gray-900 font-serif mb-6">Help & Support</h2>
+               <p className="text-gray-600 mb-8">For any assistance with your orders, please reach out to our team.</p>
+               
+               <div className="space-y-4 max-w-sm">
+                  <a href="tel:1800123456" className="flex items-center space-x-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:border-warmOrange hover:bg-peach-50/50 transition-colors group cursor-pointer">
+                     <Phone size={24} className="text-warmOrange group-hover:scale-110 transition-transform" />
+                     <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-warmOrange transition-colors">Call Us</p>
+                        <p className="font-bold text-gray-900">1800 123 456</p>
+                     </div>
+                  </a>
+                  <a href="mailto:support@hungry.com" className="flex items-center space-x-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:border-warmOrange hover:bg-peach-50/50 transition-colors group cursor-pointer">
+                     <Mail size={24} className="text-warmOrange group-hover:scale-110 transition-transform" />
+                     <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-warmOrange transition-colors">Email Us</p>
+                        <p className="font-bold text-gray-900">support@hungry.com</p>
+                     </div>
+                  </a>
+                  <button onClick={() => setIsChatOpen(true)} className="w-full text-left flex items-center space-x-4 bg-gray-50 p-4 rounded-2xl border border-gray-100 hover:border-warmOrange hover:bg-peach-50/50 transition-colors group cursor-pointer">
+                     <MessageCircle size={24} className="text-warmOrange group-hover:scale-110 transition-transform" />
+                     <div>
+                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest group-hover:text-warmOrange transition-colors">Live Chat</p>
+                        <p className="font-bold text-gray-900">Chat with us</p>
+                     </div>
+                  </button>
+               </div>
             </div>
           )}
 
@@ -657,6 +642,9 @@ const Dashboard = () => {
             </div>
          </div>
       )}
+
+      {/* Support Chat Widget */}
+      <SupportChatWidget isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
 
     </div>
   );

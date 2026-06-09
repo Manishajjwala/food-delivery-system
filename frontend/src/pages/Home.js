@@ -3,7 +3,6 @@ import HeroSlider from '../components/HeroSlider';
 import OffersSection from '../components/OffersSection';
 import MenuSection from '../components/MenuSection';
 import WhyChooseUs from '../components/WhyChooseUs';
-import Footer from '../components/Footer';
 
 const Home = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +16,6 @@ const Home = () => {
         <MenuSection searchTerm={searchTerm} />
         <WhyChooseUs />
       </div>
-      <Footer />
     </div>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
-import { MapPin, CreditCard, ChevronRight, CheckCircle, Home, Plus, Briefcase, Edit2, Trash2 } from 'lucide-react';
+import { MapPin, CreditCard, ChevronRight, CheckCircle, Home, Plus, Briefcase, Edit2, Trash2, AlertCircle } from 'lucide-react';
 
 const Checkout = () => {
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -205,6 +205,7 @@ const Checkout = () => {
             name: item.name,
             quantity: item.quantity,
             price: parseFloat(String(item.price).replace(/[₹$,]/g, '')),
+            variant: item.variant?.name || 'Regular',
           })),
           shippingAddress: {
             address: orderAddress,
@@ -212,6 +213,8 @@ const Checkout = () => {
           },
           paymentMethod: selectedPayment,
           totalPrice: grandTotal,
+          estimatedDeliveryTime: 30 + Math.min(Math.floor(cartTotal / 500) * 5, 20) + (cartItems.length * 2), 
+          preparationTime: 10 + Math.min(cartItems.length * 2, 20),
         };
 
         const response = await fetch('http://localhost:5000/api/orders', {
@@ -415,60 +418,59 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                {/* Conditional Payment Fields */}
                 <div className="mt-8 animate-in fade-in slide-in-from-top-2">
                     {selectedPayment === 'upi' && (
-                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 max-w-md mx-auto">
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Enter UPI ID</label>
+                        <div className="bg-peach-50/30 p-8 rounded-[2rem] border border-peach-100 max-w-md mx-auto shadow-inner">
+                            <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 text-[10px] uppercase tracking-widest">Enter UPI ID</label>
                             <input 
                                 type="text"
                                 value={upiId}
                                 onChange={(e) => setUpiId(e.target.value)}
                                 placeholder="e.g. username@okhdfcbank"
-                                className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-warmOrange/20 focus:border-warmOrange"
+                                className="w-full px-6 py-4 rounded-2xl border border-peach-100 focus:outline-none focus:ring-4 focus:ring-warmOrange/10 focus:border-warmOrange bg-white font-medium text-gray-800"
                             />
-                            <p className="text-xs text-gray-500 mt-2 text-center">A payment request will be sent to your UPI app.</p>
+                            <p className="text-[10px] text-gray-400 mt-4 text-center italic font-medium">A secure protocol request will be sent to your primary UPI terminal.</p>
                         </div>
                     )}
-
+ 
                     {selectedPayment === 'card' && (
-                        <div className="bg-gray-50 p-6 rounded-2xl border border-gray-100 max-w-lg mx-auto space-y-4">
+                        <div className="bg-peach-50/30 p-8 rounded-[2rem] border border-peach-100 max-w-lg mx-auto space-y-6 shadow-inner">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Card Number</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 text-[10px] uppercase tracking-widest">Card Identification</label>
                                 <input 
                                     type="text"
                                     value={cardNumber}
                                     onChange={(e) => setCardNumber(e.target.value)}
                                     placeholder="0000 0000 0000 0000"
                                     maxLength="19"
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-warmOrange/20 focus:border-warmOrange tracking-widest"
+                                    className="w-full px-6 py-4 rounded-2xl border border-peach-100 focus:outline-none focus:ring-4 focus:ring-warmOrange/10 focus:border-warmOrange bg-white tracking-[0.2em] text-gray-800 font-mono"
                                 />
                             </div>
-                            <div className="flex space-x-4">
+                            <div className="flex space-x-6">
                                 <div className="flex-1">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Expiry Date</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 text-[10px] uppercase tracking-widest">Expiry</label>
                                     <input 
                                         type="text"
                                         value={cardExpiry}
                                         onChange={(e) => setCardExpiry(e.target.value)}
                                         placeholder="MM/YY"
                                         maxLength="5"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-warmOrange/20 focus:border-warmOrange text-center"
+                                        className="w-full px-6 py-4 rounded-2xl border border-peach-100 focus:outline-none focus:ring-4 focus:ring-warmOrange/10 focus:border-warmOrange bg-white text-center font-mono"
                                     />
                                 </div>
                                 <div className="flex-1">
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">CVV</label>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2 ml-1 text-[10px] uppercase tracking-widest">CVV</label>
                                     <input 
                                         type="password"
                                         value={cardCvv}
                                         onChange={(e) => setCardCvv(e.target.value)}
                                         placeholder="•••"
                                         maxLength="3"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-warmOrange/20 focus:border-warmOrange text-center tracking-widest"
+                                        className="w-full px-6 py-4 rounded-2xl border border-peach-100 focus:outline-none focus:ring-4 focus:ring-warmOrange/10 focus:border-warmOrange bg-white text-center tracking-[0.4em]"
                                     />
                                 </div>
                             </div>
-                             <p className="text-xs text-gray-500 mt-2 text-center">Your payment details are securely encrypted.</p>
+                             <p className="text-[10px] text-gray-400 mt-2 text-center italic font-medium">Your credentials are protected by bank-grade encryption protocols.</p>
                         </div>
                     )}
                 </div>
@@ -505,45 +507,48 @@ const Checkout = () => {
               
               <div className="max-h-60 overflow-y-auto pr-2 mb-6 no-scrollbar space-y-4">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded-xl">
+                  <div key={`${item.id}-${item.variant?.name}`} className="flex justify-between items-center text-sm bg-gray-50 p-2 rounded-xl border border-gray-100">
                     <div className="flex space-x-3 items-center">
-                        <img src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'} alt={item.name} className="w-12 h-12 object-cover rounded-lg shadow-sm" />
+                        <img src={item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c'} alt={item.name} className="w-12 h-12 object-cover rounded-lg shadow-sm border border-peach-50" />
                         <div>
                           <p className="text-gray-900 font-bold truncate w-28">{item.name}</p>
-                          <p className="text-warmOrange font-bold text-xs">{item.quantity}x</p>
+                          <div className="flex items-center gap-1.5">
+                             <p className="text-warmOrange font-black text-[10px]">{item.quantity}x</p>
+                             {item.variant && <span className="text-[9px] font-black text-gray-400 bg-white px-1.5 py-0.5 rounded border border-gray-100 uppercase">{item.variant.name}</span>}
+                          </div>
                         </div>
                     </div>
-                    <span className="font-bold text-gray-900">₹{(parseFloat(String(item.price).replace(/[₹$,]/g, '')) * item.quantity)}</span>
+                    <span className="font-black text-gray-900">₹{(parseFloat(String(item.price).replace(/[₹$,]/g, '')) * item.quantity)}</span>
                   </div>
                 ))}
               </div>
               
               <div className="space-y-3 pt-4 border-t border-gray-50">
-                <div className="flex justify-between text-gray-500 text-sm">
+                <div className="flex justify-between text-gray-500 text-sm font-medium">
                   <span>Subtotal</span>
                   <span>₹{cartTotal.toFixed(0)}</span>
                 </div>
-                <div className="flex justify-between text-gray-500 text-sm">
+                <div className="flex justify-between text-gray-500 text-sm font-medium">
                   <span>Delivery Fee</span>
                   <span>₹{deliveryFee}</span>
                 </div>
-                <div className="flex justify-between text-gray-500 text-sm">
+                <div className="flex justify-between text-gray-500 text-sm font-medium">
                   <span>GST (5%)</span>
                   <span>₹{tax.toFixed(0)}</span>
                 </div>
                 {discountApplied > 0 && (
-                   <div className="flex justify-between text-green-600 font-bold text-sm">
+                   <div className="flex justify-between text-green-600 font-extrabold text-sm animate-fade-in">
                      <span>Discount Applied</span>
                      <span>-₹{discountApplied.toFixed(0)}</span>
                    </div>
                 )}
-                <div className="bg-peach-50/50 p-3 rounded-xl border border-peach-100 flex justify-between items-center mt-2">
-                   <p className="text-sm font-bold text-gray-700">Estimated Delivery:</p>
-                   <p className="text-sm font-black text-warmOrange">30-40 minutes</p>
+                <div className="bg-orange-50/50 p-3 rounded-xl border border-orange-100 flex justify-between items-center mt-2 group hover:bg-orange-50 transition-colors">
+                   <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Estimated Delivery:</p>
+                   <p className="text-sm font-black text-warmOrange">30-40 mins</p>
                 </div>
                 <div className="flex justify-between items-baseline pt-4 mt-4 border-t border-peach-100">
-                  <span className="text-xl font-bold text-gray-900">Grand Total</span>
-                  <span className="text-3xl font-extrabold text-warmOrange">
+                  <span className="text-xl font-black text-gray-900">Grand Total</span>
+                  <span className="text-3xl font-black text-warmOrange tracking-tighter">
                     ₹{grandTotal.toFixed(0)}
                   </span>
                 </div>
@@ -551,7 +556,10 @@ const Checkout = () => {
 
               {/* Apply Coupon Section */}
               <div className="mt-6 pt-6 border-t border-gray-100">
-                 <p className="text-sm font-bold text-gray-900 mb-3">Apply Promo Code</p>
+                 <div className="flex justify-between items-center mb-3">
+                    <p className="text-sm font-black text-gray-900 uppercase tracking-tight">Promo Code</p>
+                    {step === 1 && <span className="text-[8px] font-black text-warmOrange bg-warmOrange/10 px-2 py-0.5 rounded-full uppercase tracking-widest">All Available</span>}
+                 </div>
                  <div className="flex space-x-2">
                     <input 
                       type="text" 
@@ -561,175 +569,83 @@ const Checkout = () => {
                           setCouponMessage({ text: '', type: '' });
                       }}
                       disabled={discountApplied > 0}
-                      placeholder="e.g. HUNGRY50"
-                      className="flex-1 px-4 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-warmOrange/20 focus:border-warmOrange text-sm uppercase disabled:bg-gray-50 disabled:text-gray-500"
+                      className="flex-1 px-4 py-3 border border-gray-100 rounded-2xl focus:outline-none focus:ring-2 focus:ring-warmOrange/20 focus:border-warmOrange text-sm uppercase font-bold disabled:bg-gray-50 disabled:text-gray-500 shadow-inner"
                     />
                     {discountApplied > 0 ? (
                       <button 
                         onClick={removeCoupon}
-                        className="px-4 py-2 bg-red-100 text-red-600 font-bold rounded-xl hover:bg-red-200 transition-colors text-sm"
+                        className="px-5 py-3 bg-red-50 text-red-600 font-black rounded-2xl hover:bg-red-100 transition-all text-xs uppercase tracking-widest"
                       >
                           Remove
                       </button>
                     ) : (
                       <button 
                         onClick={() => handleApplyCoupon()}
-                        className="px-4 py-2 bg-gray-900 text-white font-bold rounded-xl hover:bg-gray-800 transition-colors text-sm"
+                        className="px-5 py-3 bg-gray-900 text-white font-black rounded-2xl hover:bg-black transition-all hover:scale-105 active:scale-95 text-xs uppercase tracking-widest shadow-lg"
                       >
                           Apply
                       </button>
                     )}
                  </div>
                  {couponMessage.text && (
-                     <p className={`text-xs font-bold mt-2 ${couponMessage.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                     <p className={`text-[10px] font-black mt-3 flex items-center gap-2 uppercase tracking-tight ${couponMessage.type === 'success' ? 'text-green-600' : 'text-red-500'}`}>
+                         <span className={`w-1.5 h-1.5 rounded-full ${couponMessage.type === 'success' ? 'bg-green-500' : 'bg-red-500'}`}></span>
                          {couponMessage.text}
                      </p>
                  )}
                  
                  {/* Available Coupons Quick Select */}
                  {!discountApplied && (
-                     <div className="mt-4">
-                         <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Available Coupons</p>
-                         <div className="max-h-[340px] overflow-y-auto pr-2 space-y-3 no-scrollbar">
+                     <div className="mt-6">
+                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4">Eligible Offers</p>
+                         <div className="max-h-[340px] overflow-y-auto pr-2 space-y-4 no-scrollbar pb-2">
                          
-                         {/* HUNGRY50 */}
-                         <div 
-                           onClick={() => cartTotal >= 199 && handleApplyCoupon('HUNGRY50')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 199 ? 'bg-orange-50 border-orange-100 cursor-pointer hover:bg-orange-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <p className={`font-bold text-sm ${cartTotal >= 199 ? 'text-gray-900' : 'text-gray-500'}`}>HUNGRY50</p>
-                                 <p className="text-xs text-gray-500">Flat ₹50 OFF on orders above ₹199</p>
-                             </div>
-                             {cartTotal >= 199 ? (
-                               <span className="text-xs font-bold text-warmOrange group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
-                         
-                         {/* WELCOME20 */}
-                         <div 
-                           onClick={() => handleApplyCoupon('WELCOME20')} 
-                           className="bg-pink-50 border border-pink-100 p-3 rounded-xl cursor-pointer hover:bg-pink-100 transition-colors flex justify-between items-center group"
-                         >
-                             <div>
-                                 <p className="font-bold text-sm text-gray-900">WELCOME20</p>
-                                 <p className="text-xs text-gray-600">20% OFF for new users (Max ₹100)</p>
-                             </div>
-                             <span className="text-xs font-bold text-pink-500 group-hover:underline">Apply</span>
-                         </div>
-                         
-                         {/* HDFC150 */}
-                         <div 
-                           onClick={() => cartTotal >= 599 && handleApplyCoupon('HDFC150')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 599 ? 'bg-blue-50 border-blue-100 cursor-pointer hover:bg-blue-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <div className="flex items-center space-x-2">
-                                     <p className={`font-bold text-sm ${cartTotal >= 599 ? 'text-gray-900' : 'text-gray-500'}`}>HDFC150</p>
-                                     <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-bold tracking-wider">BANK OFFER</span>
-                                 </div>
-                                 <p className="text-xs text-gray-500 mt-1">Flat ₹150 OFF with HDFC Bank Cards (Min ₹599)</p>
-                             </div>
-                             {cartTotal >= 599 ? (
-                               <span className="text-xs font-bold text-blue-600 group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
+                         {[
+                           { code: 'HUNGRY50', min: 199, desc: 'Flat ₹50 OFF on orders above ₹199', color: 'orange', method: 'any' },
+                           { code: 'WELCOME20', min: 0, desc: '20% OFF for new users (Max ₹100)', color: 'pink', method: 'any' },
+                           { code: 'HDFC150', min: 599, desc: 'Flat ₹150 OFF with HDFC Cards', color: 'blue', method: 'card', badge: 'BANK OFFER' },
+                           { code: 'FREEDELIVERY', min: 499, desc: 'Free delivery on orders above ₹499', color: 'purple', method: 'any' },
+                           { code: 'PAYUPI', min: 149, desc: 'Flat ₹30 OFF via any UPI App', color: 'cyan', method: 'upi', badge: 'UPI OFFER' },
+                           { code: 'MASTER50', min: 299, desc: 'Flat ₹50 OFF on Mastercard', color: 'indigo', method: 'card', badge: 'CARDS OFFER' },
+                           { code: 'AMZPAY', min: 199, desc: '10% OFF via Amazon Pay Wallet', color: 'amber', method: 'wallet', badge: 'WALLET' },
+                           { code: 'PAYTM', min: 199, desc: '₹40 OFF via Paytm Wallet', color: 'blue', method: 'wallet', badge: 'WALLET' }
+                         ].map(coupon => {
+                           const isPriceEligible = cartTotal >= coupon.min;
+                           const isMethodEligible = step === 1 || coupon.method === 'any' || selectedPayment === coupon.method || (coupon.method === 'wallet' && selectedPayment !== 'cod');
+                           const isEligible = isPriceEligible && isMethodEligible;
 
-                         {/* FREEDELIVERY */}
-                         <div 
-                           onClick={() => cartTotal >= 499 && handleApplyCoupon('FREEDELIVERY')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 499 ? 'bg-purple-50 border-purple-100 cursor-pointer hover:bg-purple-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <p className={`font-bold text-sm ${cartTotal >= 499 ? 'text-gray-900' : 'text-gray-500'}`}>FREEDELIVERY</p>
-                                 <p className="text-xs text-gray-500">Free delivery on orders above ₹499</p>
-                             </div>
-                             {cartTotal >= 499 ? (
-                               <span className="text-xs font-bold text-purple-600 group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
-
-                         {/* PAYUPI */}
-                         <div 
-                           onClick={() => cartTotal >= 149 && handleApplyCoupon('PAYUPI')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 149 ? 'bg-cyan-50 border-cyan-100 cursor-pointer hover:bg-cyan-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <div className="flex items-center space-x-2">
-                                     <p className={`font-bold text-sm ${cartTotal >= 149 ? 'text-gray-900' : 'text-gray-500'}`}>PAYUPI</p>
-                                     <span className="text-[10px] bg-cyan-100 text-cyan-700 px-2 py-0.5 rounded border border-cyan-200 font-bold tracking-wider">UPI OFFER</span>
+                           return (
+                             <div 
+                               key={coupon.code}
+                               onClick={() => isEligible && handleApplyCoupon(coupon.code)} 
+                               className={`border p-4 rounded-[1.5rem] transition-all relative overflow-hidden group ${
+                                 isEligible 
+                                   ? `bg-${coupon.color}-50 border-${coupon.color}-100 cursor-pointer hover:shadow-lg hover:shadow-${coupon.color}-500/10` 
+                                   : 'bg-gray-50 border-gray-100 opacity-60'
+                               }`}
+                             >
+                                 <div className="flex justify-between items-start mb-2 relative z-10">
+                                   <div className="flex items-center space-x-2">
+                                       <p className={`font-black text-sm ${isEligible ? 'text-gray-900' : 'text-gray-400'}`}>{coupon.code}</p>
+                                       {coupon.badge && <span className={`text-[8px] font-black px-1.5 py-0.5 rounded border ${isEligible ? `bg-${coupon.color}-100 text-${coupon.color}-700 border-${coupon.color}-200` : 'bg-gray-100 text-gray-400 border-gray-200'}`}>{coupon.badge}</span>}
+                                   </div>
                                  </div>
-                                 <p className="text-xs text-gray-500 mt-1">Flat ₹30 OFF via any UPI App (Min ₹149)</p>
-                             </div>
-                             {cartTotal >= 149 ? (
-                               <span className="text-xs font-bold text-cyan-600 group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
-
-                         {/* MASTER50 */}
-                         <div 
-                           onClick={() => cartTotal >= 299 && handleApplyCoupon('MASTER50')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 299 ? 'bg-indigo-50 border-indigo-100 cursor-pointer hover:bg-indigo-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <div className="flex items-center space-x-2">
-                                     <p className={`font-bold text-sm ${cartTotal >= 299 ? 'text-gray-900' : 'text-gray-500'}`}>MASTER50</p>
-                                     <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded border border-indigo-200 font-bold tracking-wider">CARDS OFFER</span>
+                                 <p className="text-[10px] text-gray-500 font-bold leading-tight relative z-10">{coupon.desc}</p>
+                                 
+                                 <div className="mt-3 flex justify-between items-center relative z-10">
+                                    {isEligible ? (
+                                       <span className={`text-[10px] font-black text-${coupon.color}-600 uppercase tracking-widest group-hover:underline`}>Apply Code</span>
+                                    ) : (
+                                       <span className="text-[9px] font-black text-gray-400 uppercase tracking-tight flex items-center gap-1.5">
+                                          <AlertCircle size={12} />
+                                          {!isPriceEligible ? `Min order ₹${coupon.min}` : 'Method restricted'}
+                                       </span>
+                                    )}
                                  </div>
-                                 <p className="text-xs text-gray-500 mt-1">Flat ₹50 OFF on Mastercard (Min ₹299)</p>
+                                 {isEligible && <div className={`absolute -right-4 -bottom-4 w-12 h-12 bg-${coupon.color}-500/5 rounded-full blur-xl group-hover:scale-150 transition-transform`}></div>}
                              </div>
-                             {cartTotal >= 299 ? (
-                               <span className="text-xs font-bold text-indigo-600 group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
-
-                         {/* AMZPAY */}
-                         <div 
-                           onClick={() => cartTotal >= 199 && handleApplyCoupon('AMZPAY')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 199 ? 'bg-amber-50 border-amber-100 cursor-pointer hover:bg-amber-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <div className="flex items-center space-x-2">
-                                     <p className={`font-bold text-sm ${cartTotal >= 199 ? 'text-gray-900' : 'text-gray-500'}`}>AMZPAY</p>
-                                     <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded border border-amber-200 font-bold tracking-wider">WALLET</span>
-                                 </div>
-                                 <p className="text-xs text-gray-500 mt-1">10% OFF up to ₹100 via Amazon Pay</p>
-                             </div>
-                             {cartTotal >= 199 ? (
-                               <span className="text-xs font-bold text-amber-600 group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
-
-                         {/* PAYTM */}
-                         <div 
-                           onClick={() => cartTotal >= 199 && handleApplyCoupon('PAYTM')} 
-                           className={`border p-3 rounded-xl transition-colors flex justify-between items-center ${cartTotal >= 199 ? 'bg-blue-50 border-blue-100 cursor-pointer hover:bg-blue-100 group' : 'bg-gray-50 border-gray-100 opacity-60 pointer-events-none'}`}
-                         >
-                             <div>
-                                 <div className="flex items-center space-x-2">
-                                     <p className={`font-bold text-sm ${cartTotal >= 199 ? 'text-gray-900' : 'text-gray-500'}`}>PAYTM</p>
-                                     <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded border border-blue-200 font-bold tracking-wider">WALLET</span>
-                                 </div>
-                                 <p className="text-xs text-gray-500 mt-1">Flat ₹40 OFF via Paytm Wallet (Min ₹199)</p>
-                             </div>
-                             {cartTotal >= 199 ? (
-                               <span className="text-xs font-bold text-blue-600 group-hover:underline">Apply</span>
-                             ) : (
-                               <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Not Eligible</span>
-                             )}
-                         </div>
+                           );
+                         })}
                          
                          </div>
                      </div>
