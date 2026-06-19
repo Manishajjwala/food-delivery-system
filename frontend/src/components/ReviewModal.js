@@ -15,7 +15,7 @@ const ReviewModal = ({ orderId, onCancel, onSuccess }) => {
     
     try {
       const token = localStorage.getItem('userToken');
-      const res = await fetch(`http://localhost:5000/api/orders/${orderId}/review`, {
+      const res = await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${orderId}/review`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

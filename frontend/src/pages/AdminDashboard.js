@@ -12,7 +12,7 @@ import {
   LineChart, Line, AreaChart, Area, Cell, PieChart, Pie 
 } from 'recharts';
 
-const API = 'http://localhost:5000/api/admin';
+const API = 'food-delivery-system-xb0m.onrender.com/api/admin';
 const getToken = () => localStorage.getItem('adminToken') || localStorage.getItem('userToken');
 
 const formatCurrency = (amount) => {
@@ -255,7 +255,7 @@ const AdminDashboard = () => {
 
   const fetchMenu = useCallback(async () => {
     setLoading(p => ({ ...p, menu: true }));
-    const res = await fetch('http://localhost:5000/api/menu');
+    const res = await fetch('food-delivery-system-xb0m.onrender.com/api/menu');
     if (res?.ok) setMenuItems(await res.json());
     setLoading(p => ({ ...p, menu: false }));
   }, []);
@@ -265,7 +265,7 @@ const AdminDashboard = () => {
     fetchStats(); fetchUsers(); fetchOrders(); fetchMenu();
 
     // Socket.io for Real-time Dashboard Updates
-    const socket = io('http://localhost:5000');
+    const socket = io('food-delivery-system-xb0m.onrender.com');
     
     socket.on('ORDER_CREATED', (data) => {
        console.log('New order received:', data.orderId);
@@ -324,7 +324,7 @@ const AdminDashboard = () => {
   const handleMenuSubmit = async (e, data) => {
     e.preventDefault();
     setMenuLoading(true);
-    const url = menuModal.mode === 'add' ? 'http://localhost:5000/api/menu' : `http://localhost:5000/api/menu/${menuModal.item._id}`;
+    const url = menuModal.mode === 'add' ? 'food-delivery-system-xb0m.onrender.com/api/menu' : `food-delivery-system-xb0m.onrender.com/api/menu/${menuModal.item._id}`;
     const res = await authFetch(url, { method: menuModal.mode === 'add' ? 'POST' : 'PUT', body: JSON.stringify(data) });
     if (res?.ok) { showNotification(menuModal.mode === 'add' ? 'Menu item added' : 'Menu item updated'); setMenuModal({ open: false }); fetchMenu(); }
     setMenuLoading(false);
@@ -332,7 +332,7 @@ const AdminDashboard = () => {
 
   const handleDeleteMenu = async (id) => {
     if (!window.confirm('Are you sure you want to delete this dish from the menu?')) return;
-    const res = await authFetch(`http://localhost:5000/api/menu/${id}`, { method: 'DELETE' });
+    const res = await authFetch(`food-delivery-system-xb0m.onrender.com/api/menu/${id}`, { method: 'DELETE' });
     if (res?.ok) { showNotification('Menu item deleted'); fetchMenu(); }
   };
 

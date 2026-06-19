@@ -21,7 +21,7 @@ const DeliveryLogin = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/delivery/login', {
+      const response = await fetch('food-delivery-system-xb0m.onrender.com/api/delivery/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: identity, password }),

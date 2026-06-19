@@ -16,7 +16,7 @@ const TrackOrder = () => {
     setError('');
 
     try {
-      const response = await fetch(`http://localhost:5000/api/orders/track/${orderId.trim()}`);
+      const response = await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/track/${orderId.trim()}`);
       const data = await response.json();
 
       if (response.ok) {

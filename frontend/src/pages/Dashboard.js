@@ -88,7 +88,7 @@ const Dashboard = () => {
         const token = localStorage.getItem('userToken');
         
         // Fetch Orders
-        const ordRes = await fetch('http://localhost:5000/api/orders/myorders', {
+        const ordRes = await fetch('food-delivery-system-xb0m.onrender.com/api/orders/myorders', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (ordRes.ok) {
@@ -105,7 +105,7 @@ const Dashboard = () => {
         }
 
         // Fetch Profile
-        const profRes = await fetch('http://localhost:5000/api/auth/profile', {
+        const profRes = await fetch('food-delivery-system-xb0m.onrender.com/api/auth/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (profRes.ok) {
@@ -118,7 +118,7 @@ const Dashboard = () => {
         }
 
         // Fetch Menu Items for Recommendations
-        const menuRes = await fetch('http://localhost:5000/api/menu');
+        const menuRes = await fetch('food-delivery-system-xb0m.onrender.com/api/menu');
         if (menuRes.ok) {
           const menuData = await menuRes.json();
           setMenuItems(menuData);
@@ -146,7 +146,7 @@ const Dashboard = () => {
   const handleSaveProfile = async () => {
     try {
       const token = localStorage.getItem('userToken');
-      const response = await fetch('http://localhost:5000/api/auth/profile', {
+      const response = await fetch('food-delivery-system-xb0m.onrender.com/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +176,7 @@ const Dashboard = () => {
   const updateBackendProfile = async (updateObj) => {
     try {
       const token = localStorage.getItem('userToken');
-      await fetch('http://localhost:5000/api/auth/profile', {
+      await fetch('food-delivery-system-xb0m.onrender.com/api/auth/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

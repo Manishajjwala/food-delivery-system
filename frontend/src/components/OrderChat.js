@@ -10,7 +10,7 @@ const OrderChat = ({ orderId, senderRole }) => {
   const scrollRef = useRef();
 
   useEffect(() => {
-    socketRef.current = io('http://localhost:5000');
+    socketRef.current = io('food-delivery-system-xb0m.onrender.com');
     
     socketRef.current.emit('joinOrder', orderId);
 

@@ -30,7 +30,7 @@ const ResetPassword = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/auth/reset-password/${token}`, {
+      const response = await fetch(`food-delivery-system-xb0m.onrender.com/api/auth/reset-password/${token}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password }),

@@ -21,7 +21,7 @@ const MenuSection = ({ searchTerm = '' }) => {
     if (isAuthenticated) {
       const fetchMyOrders = async () => {
         try {
-          const res = await fetch('http://localhost:5000/api/orders/myorders', {
+          const res = await fetch('food-delivery-system-xb0m.onrender.com/api/orders/myorders', {
             headers: { 'Authorization': `Bearer ${localStorage.getItem('userToken')}` }
           });
           const data = await res.json();
@@ -52,7 +52,7 @@ const MenuSection = ({ searchTerm = '' }) => {
   useEffect(() => {
     const fetchMenu = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/menu');
+        const response = await fetch('food-delivery-system-xb0m.onrender.com/api/menu');
         const data = await response.json();
         setMenuItems(data);
         setLoading(false);

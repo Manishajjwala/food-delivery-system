@@ -29,7 +29,7 @@ const RestaurantOnboarding = () => {
     
     try {
       // Connect to the new Express backend
-      const response = await fetch('http://localhost:5000/api/restaurants/register', {
+      const response = await fetch('food-delivery-system-xb0m.onrender.com/api/restaurants/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -20,7 +20,7 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch('food-delivery-system-xb0m.onrender.com/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
@@ -70,7 +70,7 @@ const Login = () => {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/send-otp', {
+      const res = await fetch('food-delivery-system-xb0m.onrender.com/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone }),
@@ -104,7 +104,7 @@ const Login = () => {
     setError('');
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/verify-otp', {
+      const res = await fetch('food-delivery-system-xb0m.onrender.com/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone, otp }),

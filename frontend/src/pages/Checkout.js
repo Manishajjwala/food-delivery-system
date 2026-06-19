@@ -217,7 +217,7 @@ const Checkout = () => {
           preparationTime: 10 + Math.min(cartItems.length * 2, 20),
         };
 
-        const response = await fetch('http://localhost:5000/api/orders', {
+        const response = await fetch('food-delivery-system-xb0m.onrender.com/api/orders', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

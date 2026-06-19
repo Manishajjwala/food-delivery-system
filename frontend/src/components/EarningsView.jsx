@@ -9,7 +9,7 @@ const EarningsView = () => {
   useEffect(() => {
     const fetchEarnings = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/delivery/earnings', {
+        const res = await fetch('food-delivery-system-xb0m.onrender.com/api/delivery/earnings', {
           headers: { Authorization: `Bearer ${localStorage.getItem('userToken')}` }
         });
         if (res.ok) setData(await res.json());

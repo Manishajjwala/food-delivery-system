@@ -38,7 +38,7 @@ const OrderDetail = () => {
     const fetchOrderDetails = async () => {
       try {
         const token = localStorage.getItem('userToken');
-        const response = await fetch(`http://localhost:5000/api/orders/${orderId}`, {
+        const response = await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${orderId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -100,7 +100,7 @@ return () => clearInterval(pollInterval);
 
   // 3. Socket.io Real-time Updates (Status & GPS)
   useEffect(() => {
-    const socket = io('http://localhost:5000');
+    const socket = io('food-delivery-system-xb0m.onrender.com');
     
     socket.on('connect', () => {
       socket.emit('joinOrder', orderId);
@@ -342,7 +342,7 @@ return () => clearInterval(pollInterval);
                       onClick={async () => {
                         try {
                           const token = localStorage.getItem('userToken');
-                          const res = await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                          const res = await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${order.id}/status`, {
                             method: 'PUT',
                             headers: {
                               'Content-Type': 'application/json',
@@ -373,7 +373,7 @@ return () => clearInterval(pollInterval);
                       try {
                         const token = localStorage.getItem('userToken');
                         // 1. Reset to Placed (pending)
-                        await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                        await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${order.id}/status`, {
                           method: 'PUT',
                           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                           body: JSON.stringify({ status: 'pending' })
@@ -383,7 +383,7 @@ return () => clearInterval(pollInterval);
 
                         // 2. Transition to Preparing (processing) après 3s
                         setTimeout(async () => {
-                           await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                           await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${order.id}/status`, {
                              method: 'PUT',
                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                              body: JSON.stringify({ status: 'processing' })
@@ -393,7 +393,7 @@ return () => clearInterval(pollInterval);
 
                         // 3. Transition to Out for Delivery after 6s
                         setTimeout(async () => {
-                           await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                           await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${order.id}/status`, {
                              method: 'PUT',
                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                              body: JSON.stringify({ status: 'out_for_delivery' })
@@ -403,7 +403,7 @@ return () => clearInterval(pollInterval);
 
                         // 4. Final Transition to Delivered after 9s
                         setTimeout(async () => {
-                          await fetch(`http://localhost:5000/api/orders/${order.id}/status`, {
+                          await fetch(`food-delivery-system-xb0m.onrender.com/api/orders/${order.id}/status`, {
                             method: 'PUT',
                             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                             body: JSON.stringify({ status: 'delivered' })

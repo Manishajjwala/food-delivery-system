@@ -13,7 +13,7 @@ import BottomNav from '../components/BottomNav';
 import OrderDetailsView from '../components/OrderDetailsView';
 import { io } from 'socket.io-client';
 
-const API_BASE = 'http://localhost:5000/api/delivery';
+const API_BASE = 'food-delivery-system-xb0m.onrender.com/api/delivery';
 
 const DeliveryDashboard = () => {
   const navigate = useNavigate();
@@ -68,7 +68,7 @@ const DeliveryDashboard = () => {
         fetchProfile();
     }, 30000); 
     
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('food-delivery-system-xb0m.onrender.com');
     setSocket(newSocket);
     
     newSocket.on('connect', () => console.log("Connectivity active"));

@@ -10,7 +10,7 @@ import SwipeButton from '../components/SwipeButton';
 import OTPModal from '../components/OTPModal';
 import RiderMap from '../components/RiderMap';
 
-const API_BASE = 'http://localhost:5000/api/delivery';
+const API_BASE = 'food-delivery-system-xb0m.onrender.com/api/delivery';
 
 const RiderHome = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const RiderHome = () => {
     if (!token) { navigate('/rider/login'); return; }
 
     fetchOrders();
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('food-delivery-system-xb0m.onrender.com');
     setSocket(newSocket);
     newSocket.emit('joinOrder', 'rider_hub');
     
