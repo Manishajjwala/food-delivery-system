@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/auth/signup",
+      "destination": "https://food-delivery-system-xb0m.onrender.com/api/auth/signup"
+    }
+  ]
+}
