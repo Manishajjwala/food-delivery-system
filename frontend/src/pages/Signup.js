@@ -32,6 +32,7 @@ const Signup = () => {
 
     setLoading(true);
     try {
+      console.log("Form submitting to Render...");
       const response = await fetch('https://food-delivery-system-xb0m.onrender.com/api/auth/signup', {
         method: 'POST',
         headers: {
